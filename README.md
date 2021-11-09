@@ -17,11 +17,6 @@ ___
 
 ___
 
-**DB 초안 구조**   
-![SSAC 프로젝트_DB초안](https://user-images.githubusercontent.com/89231521/140002662-7d964b2b-8887-4475-9b76-0ce35678bf5b.png)
-
-___
-
 **(모바일 기준) 화면 구성 초안**   
 
 ![SSAC 프로젝트_화면 초안](https://user-images.githubusercontent.com/89231521/140004187-d0af250b-9fef-4ebd-97f1-f2c4851a985d.png)
