@@ -1,4 +1,4 @@
-# uDon
+# uDon : 팀원 BOBODDO 개발 Repository :) 
 
 **개요**
 > **프로젝트** **이름** : uDon   
