@@ -1,0 +1,228 @@
+//sql 작업 쿼리
+
+-- MySQL Workbench Forward Engineering
+
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- -----------------------------------------------------
+-- Schema udondb
+-- -----------------------------------------------------
+-- 구조를 변경해 본 UDON DB입니다.
+-- 
+
+-- -----------------------------------------------------
+-- Schema udondb
+--
+-- 구조를 변경해 본 UDON DB입니다.
+-- 
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `udondb` DEFAULT CHARACTER SET utf8mb4 ;
+USE `udondb` ;
+
+-- -----------------------------------------------------
+-- Table `udondb`.`Member`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `udondb`.`Member` ;
+
+
+
+CREATE TABLE IF NOT EXISTS `udondb`.`Member` (
+  `id` INT unsigned NOT NULL auto_increment COMMENT 'Primary Key 로 사용 될 회원별로 부여되는 고유 번호 (로그인 아이디와는 별도로 존재합니다)\n',
+  `loginid` VARCHAR(45) NOT NULL COMMENT '로그인 아이디',
+  `passwd` VARCHAR(256) NOT NULL COMMENT '비밀번호',
+  `nickname` VARCHAR(45) NOT NULL COMMENT '닉네임',
+  `name` VARCHAR(45) NOT NULL COMMENT '이름', --
+  `gender` TINYINT NOT NULL COMMENT '성별', --
+  `location` INT unsigned NOT NULL COMMENT '거주동네 (가입 시 위치기반으로 인식 혹은 직접 입력받습니다) Location 테이블과 foreign Key 로 연결 필요',
+  `status` TINYINT NOT NULL COMMENT '계정 상태 (1: 정상, 0.  정지회원)\n',
+  `superuser` TINYINT NOT NULL COMMENT '관리자 여부(1:관리자, 0:일반회원)',
+  `regdate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입시각',
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+drop table udondb.Member;
+
+-- test 쿼리
+
+insert into Member(loginid, passwd, nickname, name, gender, location, status, superuser)
+	values('test',123,'test','testname',1,1,1,0);
+    
+insert into Member(loginid, passwd, nickname, name, gender, location, status, superuser)
+	values('test1',123,'test1','testname1',2,2,2,0);
+
+insert into Member(loginid, passwd, nickname, name, gender, location, status, superuser) values('test2',123,'test1','testname2',2,2,2,0);
+
+
+select * from Member;
+select * from Member where loginid = 'registerId7';
+
+
+delete from Member where id = 28;
+
+
+
+
+-- -----------------------------------------------------
+-- Table `udondb`.`Location`
+-- -----------------------------------------------------
+
+DROP TABLE IF EXISTS `Location` ;
+
+CREATE TABLE IF NOT EXISTS `Location` (
+  `id` INT unsigned NOT NULL auto_increment COMMENT 'Primary Key 로 사용 될 동네별로 부여되는 고유 번호',
+  `pid` INT NULL COMMENT '상위 지역의 id (예: 서울시 관악구 이 경우, 관악구는 \'서울시\' 를 pid로 갖습니다)',
+  `name` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- 지역구 
+insert into Location(name) values('서울시');
+insert into Location(name) values('부산시');
+
+-- 구 << 
+insert into Location(pid, name) values(2, '관악구');
+insert into Location(pid, name) values(2, '중구');
+insert into Location(pid, name) values(2, '성북구');
+insert into Location(pid, name) values(2, '강남구');
+
+insert into Location(pid, name) values(7, '금정구');
+insert into Location(pid, name) values(7, '해운대구');
+insert into Location(pid, name) values(7, '강서구');
+
+select * from Location;
+
+-- pid별 조회
+select * from Location where id = 2;
+select * from Location where pid = 7;
+
+-- 삭제
+delete from Location where id = 1;
+
+-- 셀프 조인
+select si.id,  si.name, gu.id, gu.name from Location si join Location gu on si.id = gu.pid;
+
+select si.id,  si.name, gu.id as gu_ID, gu.name from Location si left outer join Location gu on si.id = gu.pid where si.id = 7;
+
+
+
+-- -----------------------------------------------------
+-- Table `udondb`.`Document`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `udondb`.`Document` ;
+
+
+drop table Document;
+
+
+CREATE TABLE IF NOT EXISTS `Document` (
+  `id` INT unsigned NOT NULL auto_increment  COMMENT 'Primary Key 로 사용 될 게시글별로 부여되는 고유 번호',
+  `location` INT unsigned NOT NULL COMMENT '어떤 지역의 게시판인지 Location 테이블과 Foreign Key로 연결',
+  `title` VARCHAR(45) NOT NULL COMMENT '게시글 제목',
+  `content` TEXT NOT NULL COMMENT '게시글 컨텐츠',
+  `writer` INT unsigned NOT NULL COMMENT '작성자 아이디 Member 테이블과 Foreign Key로 연결',
+  `status` TINYINT NOT NULL COMMENT '게시글 상태(1: 정상, 0: 블라인드)\n',
+  `regdate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성 시각',
+  PRIMARY KEY (`id`),
+  INDEX `FK_Document_Member_idx` (`writer` ASC) VISIBLE,
+  INDEX `FK_Document_Location_idx` (`location` ASC) VISIBLE,
+  CONSTRAINT `FK_Document_Member`
+    FOREIGN KEY (`writer`)
+    REFERENCES `udondb`.`Member` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `FK_Document_Location`
+    FOREIGN KEY (`location`)
+    REFERENCES `udondb`.`Location` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+select * from Document;
+
+-- 입력
+
+insert into Document( location, title, content, writer, status,regdate) values( 2, '테스트 제목','테스트 내용',1,1,'2021-11-01');
+insert into Document( location, title, content, writer, status,regdate) values( 2, '테스트 제목2','테스트 내용',2,1,'2021-11-02');
+insert into Document( location, title, content, writer, status,regdate) values( 2, '테스트 제목3','테스트 내용',3,1,'2021-11-03');
+insert into Document( location, title, content, writer, status,regdate) values( 3, '테스트 제목4','테스트 내용',4,1,'2021-11-04');
+
+insert into Document( location, title, content, writer, status) values(3, '테스트 제목4','테스트 내용',4,1);
+
+
+-- 삭제
+delete from Document where id = 26;
+  
+-- 수정  
+update Document set title="제목수정", content = "내용수정2" where id = 3;
+  
+  
+  -- 닉네임 포함 list
+  select m.nickname , d.* from Member m join Document d on m.id = d.writer;
+  
+  -- 닉네임 포함 지역 정렬
+  select m.nickname , d.* from Member m join Document d on m.id = d.writer where d.location = 2;
+  
+  -- 닉네임 포함 list + Location 정보
+  select l.*, d.* from (select m.nickname , d.* from Member m join Document d on m.id = d.writer) d join Location l on d.location = l.id;
+  
+  -- 닉네임 포함 list + Location 정보(시 중심)
+  select l.*, d.* from (select m.nickname , d.* from Member m join Document d on m.id = d.writer) d join Location l on d.location = l.id where l.pid = 2;
+  
+  
+  -- 닉네임 join
+  select m.nickname, d.* from Member m join Document d on m.id = d.writer where d.id = 4;
+  
+  
+  select * from Document;
+  
+  
+-- -----------------------------------------------------
+-- Table `udondb`.`Comment`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `udondb`.`Comment` ;
+
+
+select * from Comment;
+
+
+CREATE TABLE IF NOT EXISTS `Comment` (
+  `id` INT unsigned NOT NULL auto_increment COMMENT 'Primary Key 로 사용 될 게시글별로 부여되는 고유 번호',
+  `pid` INT NULL COMMENT '대댓글일 경우, 원댓글의 id를 저장',
+  `doc_id` INT unsigned NOT NULL COMMENT '어떤 게시글에 대한 댓글인지 Document 테이블과 Foreign Key로 연결',
+  `content` TEXT NOT NULL,
+  `writer` INT unsigned NOT NULL COMMENT '작성자 아이디 Member 테이블과 Foreign Key로 연결',
+  `status` TINYINT NOT NULL COMMENT '댓글 상태 (1 : 정상 , 0: 블라인드)',
+  `regdate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   PRIMARY KEY (`id`),
+    INDEX `FK_Comment_Document_idx` (`doc_id` ASC) VISIBLE,
+  INDEX `FK_Comment_Member_idx` (`writer` ASC) VISIBLE,
+  CONSTRAINT `FK_Comment_Document`
+    FOREIGN KEY (`doc_id`)
+    REFERENCES `udondb`.`Document` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `FK_Comment_Member`
+    FOREIGN KEY (`writer`)
+    REFERENCES `udondb`.`Member` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION )
+ENGINE = InnoDB;
+
+
+insert into Comment( pid, doc_id, content, writer, status ) values( null, 3, '댓글 테스트', 5, 1);
+insert into Comment( pid, doc_id, content, writer, status ) values( null, 3, '댓글 테스트2', 5, 1);
+insert into Comment( pid, doc_id, content, writer, status ) values( 2, 3, '대댓글 테스트', 5, 1);
+insert into Comment( pid, doc_id, content, writer, status ) values( 2, 3, '대댓글 테스트2', 5, 1);
+
+select * from Comment;
+
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
